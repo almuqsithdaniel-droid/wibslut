@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paviliun Mahjong – Permainan Simulasi (Chip Virtual)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="notice" role="note">
+    Situs simulasi untuk hiburan. Semua chip bersifat virtual dan tidak bernilai uang. Tidak ada deposit atau penarikan.
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-tile" aria-hidden="true">麻</span>
+      <div>
+        <h1>Paviliun Mahjong</h1>
+        <p class="brand-sub">麻將 · permainan ubin simulasi</p>
+      </div>
+    </div>
+
+    <div class="wallet" aria-live="polite">
+      <div class="wallet-item">
+        <span class="wallet-label">Saldo chip</span>
+        <strong id="balance">0</strong>
+      </div>
+      <button id="btnTopup" class="btn btn-primary">Isi chip</button>
+      <button id="btnBonus" class="btn btn-gold">Klaim bonus harian</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="table-area">
+
+      <nav class="tabs" role="tablist" aria-label="Pilih permainan">
+        <button class="tab active" role="tab" data-game="slots"><span class="tab-glyph" aria-hidden="true">中</span>Slot Item</button>
+        <button class="tab" role="tab" data-game="blackjack"><span class="tab-glyph" aria-hidden="true">發</span>Blackjack</button>
+        <button class="tab" role="tab" data-game="dice"><span class="tab-glyph" aria-hidden="true">白</span>Dadu</button>
+        <button class="tab" role="tab" data-game="roulette"><span class="tab-glyph" aria-hidden="true">東</span>Roulette</button>
+      </nav>
+
+      <div class="betbar">
+        <label for="betInput">Taruhan</label>
+        <input id="betInput" type="number" min="1" step="1" value="50" inputmode="numeric">
+        <div class="chips" role="group" aria-label="Pilih nominal cepat">
+          <button class="chip" data-bet="10">10</button>
+          <button class="chip" data-bet="50">50</button>
+          <button class="chip" data-bet="100">100</button>
+          <button class="chip" data-bet="500">500</button>
+          <button class="chip" data-bet="half">½</button>
+          <button class="chip" data-bet="double">2×</button>
+          <button class="chip" data-bet="max">Semua</button>
+        </div>
+      </div>
+
+      <!-- SLOT -->
+      <div class="game active" id="game-slots">
+        <h2>Slot Item</h2>
+        <p class="hint">Tiga item sama membayar besar. Dua item sama berurutan membayar 1,5×. Item di setiap gulungan dipilih acak.</p>
+        <div class="set-picker">
+          <label for="slotSet">Set item</label>
+          <select id="slotSet">
+            <option value="mahjong">Ubin Mahjong</option>
+            <option value="harta">Harta Karun</option>
+            <option value="zodiak">Zodiak Cina</option>
+            <option value="buah">Buah Klasik</option>
+          </select>
+        </div>
+        <div class="reels" id="reels">
+          <div class="reel tile" data-sym="筒">筒</div>
+          <div class="reel tile" data-sym="索">索</div>
+          <div class="reel tile" data-sym="萬">萬</div>
+        </div>
+        <div class="result" id="slotsResult">Tekan Putar untuk memulai.</div>
+        <button id="btnSpin" class="btn btn-primary btn-large">Putar</button>
+
+        <div class="auto-panel">
+          <h4 class="sub">Putar otomatis</h4>
+          <div class="auto-row" role="group" aria-label="Jumlah putaran otomatis">
+            <button class="btn auto-btn" data-auto="10">10×</button>
+            <button class="btn auto-btn" data-auto="20">20×</button>
+            <button class="btn auto-btn" data-auto="50">50×</button>
+            <button class="btn auto-btn" data-auto="100">100×</button>
+            <input id="autoCustom" type="number" min="1" max="500" step="1" inputmode="numeric" placeholder="Jumlah lain" aria-label="Jumlah putaran lain, maksimal 500">
+            <button id="autoCustomBtn" class="btn auto-btn">Mulai</button>
+          </div>
+          <div class="auto-opts">
+            <label class="check"><input type="checkbox" id="autoStopJackpot" checked> Berhenti saat tiga item sama</label>
+            <label class="limit">Batas rugi <input id="autoLossLimit" type="number" min="0" step="1" inputmode="numeric" placeholder="chip (kosong = tanpa batas)"></label>
+          </div>
+          <button id="btnAutoStop" class="btn btn-danger" hidden>Berhenti</button>
+          <div class="auto-status" id="autoStatus" aria-live="polite"></div>
+        </div>
+
+        <table class="paytable" id="paytable"></table>
+      </div>
+
+      <!-- BLACKJACK -->
+      <div class="game" id="game-blackjack">
+        <h2>Blackjack Ubin</h2>
+        <p class="hint">Capai 21 tanpa lewat. Dealer berhenti di 17. Blackjack membayar 2,5×. Empat jenis ubin: 萬, 筒, 索, 東.</p>
+        <div class="hand-block">
+          <div class="hand-title">Dealer <span id="dealerTotal"></span></div>
+          <div class="hand" id="dealerHand"></div>
+        </div>
+        <div class="hand-block">
+          <div class="hand-title">Kamu <span id="playerTotal"></span></div>
+          <div class="hand" id="playerHand"></div>
+        </div>
+        <div class="result" id="bjResult">Pasang taruhan lalu bagikan ubin.</div>
+        <div class="actions">
+          <button id="bjDeal" class="btn btn-primary">Bagikan</button>
+          <button id="bjHit" class="btn" disabled>Tambah ubin</button>
+          <button id="bjStand" class="btn" disabled>Berhenti</button>
+          <button id="bjDouble" class="btn" disabled>Gandakan</button>
+        </div>
+      </div>
+
+      <!-- DADU -->
+      <div class="game" id="game-dice">
+        <h2>Dadu Dua Sisi</h2>
+        <p class="hint">Tebak jumlah dua dadu: Rendah (2–6) membayar 2,2×. Tujuh membayar 5×. Tinggi (8–12) membayar 2,2×.</p>
+        <div class="dice-row">
+          <div class="die tile" id="die1">⚀</div>
+          <div class="die tile" id="die2">⚀</div>
+        </div>
+        <div class="dice-sum" id="diceSum">–</div>
+        <div class="choice-row" role="group" aria-label="Pilih tebakan">
+          <button class="choice active" data-dice="low">Rendah 2–6</button>
+          <button class="choice" data-dice="seven">Tujuh</button>
+          <button class="choice" data-dice="high">Tinggi 8–12</button>
+        </div>
+        <div class="result" id="diceResult">Pilih tebakan lalu lempar dadu.</div>
+        <button id="btnRoll" class="btn btn-primary btn-large">Lempar</button>
+      </div>
+
+      <!-- ROULETTE -->
+      <div class="game" id="game-roulette">
+        <h2>Roulette Eropa</h2>
+        <p class="hint">Merah, hitam, ganjil, dan genap membayar 2×. Angka tunggal (0–36) membayar 36×.</p>
+        <div class="wheel" id="wheel">
+          <span id="wheelNumber">0</span>
+        </div>
+        <div class="choice-row" role="group" aria-label="Pilih jenis taruhan">
+          <button class="choice choice-red active" data-roul="red">Merah</button>
+          <button class="choice choice-black" data-roul="black">Hitam</button>
+          <button class="choice" data-roul="odd">Ganjil</button>
+          <button class="choice" data-roul="even">Genap</button>
+          <button class="choice" data-roul="number">Angka</button>
+        </div>
+        <div class="number-pick" id="numberPick" hidden>
+          <label for="roulNumber">Angka (0–36)</label>
+          <input id="roulNumber" type="number" min="0" max="36" value="7">
+        </div>
+        <div class="result" id="roulResult">Pilih taruhan lalu putar roda.</div>
+        <button id="btnRoulette" class="btn btn-primary btn-large">Putar roda</button>
+      </div>
+
+    </section>
+
+    <aside class="side">
+      <section class="panel">
+        <h3>Dompet</h3>
+        <div class="wp-balance">
+          <span>Saldo chip</span>
+          <strong id="walletBalance">0</strong>
+        </div>
+        <dl class="stats">
+          <div><dt>Total chip diisi</dt><dd id="statTopup">0</dd></div>
+        </dl>
+        <button id="btnTopup2" class="btn btn-primary btn-block">Isi chip</button>
+        <h4 class="sub">Mutasi saldo</h4>
+        <ul class="history" id="ledger">
+          <li class="empty">Belum ada mutasi.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h3>Statistik</h3>
+        <dl class="stats">
+          <div><dt>Ronde dimainkan</dt><dd id="statPlayed">0</dd></div>
+          <div><dt>Ronde menang</dt><dd id="statWon">0</dd></div>
+          <div><dt>Persentase menang</dt><dd id="statRate">0%</dd></div>
+          <div><dt>Saldo tertinggi</dt><dd id="statBest">0</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <h3>Riwayat terakhir</h3>
+        <ul class="history" id="history">
+          <li class="empty">Belum ada ronde.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h3>Pengaturan</h3>
+        <button id="btnReset" class="btn btn-danger">Mulai ulang dari 1.000 chip</button>
+        <p class="small">Saldo dan riwayat tersimpan di browser ini saja.</p>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="topupDialog" class="dialog" aria-labelledby="topupTitle">
+    <h2 id="topupTitle">Isi chip</h2>
+    <p class="dialog-note">Chip di sini virtual dan gratis. Tidak ada pembayaran, transfer, atau penarikan uang. Maksimal 100.000 chip per pengisian.</p>
+    <div class="packages">
+      <button class="package" data-topup="500"><strong>500</strong><span>chip</span></button>
+      <button class="package" data-topup="1000"><strong>1.000</strong><span>chip</span></button>
+      <button class="package" data-topup="5000"><strong>5.000</strong><span>chip</span></button>
+      <button class="package" data-topup="10000"><strong>10.000</strong><span>chip</span></button>
+    </div>
+    <div class="custom-row">
+      <label for="topupCustom">Jumlah lain</label>
+      <input id="topupCustom" type="number" min="1" max="100000" step="1" inputmode="numeric" placeholder="Contoh: 2500">
+      <button id="topupCustomBtn" class="btn btn-primary">Isi</button>
+    </div>
+    <button id="topupClose" class="btn dialog-close">Tutup</button>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <footer class="footer">
+    <p>Paviliun Mahjong adalah proyek simulasi permainan. Jika kamu atau orang terdekat kesulitan mengendalikan kebiasaan berjudi, bicaralah dengan keluarga, teman, atau tenaga profesional.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
